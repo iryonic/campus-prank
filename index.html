@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Campus Secure WIFI</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 0, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 0, 0.05) 0%, transparent 20%);
+        }
+        .terminal {
+            border: 1px solid #0f0;
+            padding: 30px;
+            border-radius: 5px;
+            max-width: 500px;
+            background: #111;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #0f0, transparent);
+            animation: scanline 3s linear infinite;
+        }
+        @keyframes scanline {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+        .connect-btn {
+            background: linear-gradient(45deg, #0f0, #0a0);
+            color: black;
+            border: none;
+            padding: 18px 35px;
+            font-size: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+        .connect-btn:hover {
+            background: linear-gradient(45deg, #0c0, #080);
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.5);
+            transform: scale(1.05);
+        }
+        .connect-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .message {
+            margin: 12px 0;
+            text-align: left;
+            min-height: 20px;
+        }
+        .blink {
+            animation: blink 0.8s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .status-line {
+            color: #0f0;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff0;
+        }
+        .error {
+            color: #f00;
+            animation: glitch 0.3s infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            50% { transform: translateX(2px); }
+            75% { transform: translateX(-1px); }
+            100% { transform: translateX(0); }
+        }
+        .hidden {
+            display: none;
+        }
+        .final-message {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #1a1a1a;
+            animation: fadeIn 2s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .voice-indicator {
+            color: #0af;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="message">> AMARSINGH CAMPUS WIFI NETWORK AI v5.0</div>
+        <div class="message">> Advanced Voice Authentication Required</div>
+        <div class="message">> Click below to initialize connection</div>
+        
+        <button class="connect-btn" onclick="initiateConnection()" id="connectBtn">
+            COONECT TO CAMPUS WIFI 
+        </button>
+        
+        <div id="status"></div>
+        <div class="message">> <span class="blink">_</span></div>
+
+        <div id="finalMessage" class="final-message hidden">
+            > Just kidding! This was all a prank Hope you had fun!😊<br>
+            > Made with ❤️ <a href="https://irfanmanznoor.in">Irfan Manzoor </a>
+        </div>
+    </div>
+
+    <script>
+        class VoiceOrchestrator {
+            constructor() {
+                this.audioContext = null;
+                this.voices = [];
+                this.voiceProfiles = new Map();
+                this.currentStep = 0;
+            }
+
+            async init() {
+                if (!window.speechSynthesis) {
+                    throw new Error('Speech synthesis not supported');
+                }
+                
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                await this.loadVoices();
+                this.createVoiceProfiles();
+            }
+
+            loadVoices() {
+                return new Promise((resolve) => {
+                    const voices = speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        this.voices = voices;
+                        resolve();
+                    } else {
+                        speechSynthesis.onvoiceschanged = () => {
+                            this.voices = speechSynthesis.getVoices();
+                            resolve();
+                        };
+                    }
+                });
+            }
+
+            createVoiceProfiles() {
+                // AI System Voice (Deep, robotic, authoritative)
+                this.voiceProfiles.set('system', {
+                    rate: 0.85,
+                    pitch: 0.3,
+                    volume: 1.0,
+                    preferredNames: ['Microsoft David', 'Google US English', 'Alex'],
+                    style: 'robot'
+                });
+
+                // Whisper Voice (Breathy, intimate, unsettling)
+                this.voiceProfiles.set('whisper', {
+                    rate: 0.9,
+                    pitch: 1.4,
+                    volume: 0.7,
+                    preferredNames: ['Microsoft Zira', 'Google UK English Female', 'Samantha'],
+                    style: 'whisper'
+                });
+
+                // Clinical Voice (Monotone, analytical, cold)
+                this.voiceProfiles.set('clinical', {
+                    rate: 0.8,
+                    pitch: 0.9,
+                    volume: 0.9,
+                    preferredNames: ['Microsoft Hazel', 'Google US English', 'Karen'],
+                    style: 'clinical'
+                });
+
+                // Corrupted AI Voice (Glitchy, distorted, unstable)
+                this.voiceProfiles.set('corrupted', {
+                    rate: 0.7,
+                    pitch: 0.5,
+                    volume: 0.8,
+                    preferredNames: ['Microsoft David', 'Google US English'],
+                    style: 'corrupted'
+                });
+
+                // Friendly Voice (Warm, cheerful - for the reveal)
+                this.voiceProfiles.set('friendly', {
+                    rate: 1.1,
+                    pitch: 1.3,
+                    volume: 2.0,
+                    preferredNames: ['Microsoft Zira', 'Google UK English Female', 'Samantha'],
+                    style: 'friendly'
+                });
+            }
+
+            findBestVoice(profileName) {
+                const profile = this.voiceProfiles.get(profileName);
+                if (!profile) return null;
+
+                // Try to find preferred voices first
+                for (const name of profile.preferredNames) {
+                    const voice = this.voices.find(v => v.name.includes(name));
+                    if (voice) return { voice, profile };
+                }
+
+                // Fallback to any available voice
+                return this.voices.length > 0 ? { voice: this.voices[0], profile } : null;
+            }
+
+            speak(text, profileName, onStart, onEnd) {
+                const result = this.findBestVoice(profileName);
+                if (!result) {
+                    console.warn('No voice found for profile:', profileName);
+                    return;
+                }
+
+                const { voice, profile } = result;
+                const utterance = new SpeechSynthesisUtterance();
+
+                // Apply voice profile settings
+                utterance.rate = profile.rate;
+                utterance.pitch = profile.pitch;
+                utterance.volume = profile.volume;
+                utterance.voice = voice;
+
+                // Enhanced SSML-like processing for better speech
+                let processedText = this.processTextForStyle(text, profile.style);
+                utterance.text = processedText;
+
+                // Add subtle audio effects based on style
+                this.applyVoiceEffects(profile.style);
+
+                utterance.onstart = onStart;
+                utterance.onend = onEnd;
+
+                // Cancel any current speech
+                speechSynthesis.cancel();
+                
+                // Small delay for more natural pacing
+                setTimeout(() => {
+                    speechSynthesis.speak(utterance);
+                }, 100);
+            }
+
+            processTextForStyle(text, style) {
+                switch (style) {
+                    case 'robot':
+                        // Add robotic pacing with commas
+                        return text.replace(/([,.])/g, ', ... $1');
+                    case 'whisper':
+                        // Soften the text for whispering
+                        return text.toLowerCase();
+                    case 'clinical':
+                        // Add precise enunciation cues
+                        return text.split(' ').map(word => 
+                            word.length > 6 ? word.split('').join('.') : word
+                        ).join(' ');
+                    case 'corrupted':
+                        // Add glitch words occasionally
+                        const words = text.split(' ');
+                        if (Math.random() > 0.7) {
+                            const glitchWords = ['ERROR', 'DATA_CORRUPT', 'RESET', 'SYSTEM_FAIL'];
+                            words.splice(Math.floor(Math.random() * words.length), 0, 
+                                glitchWords[Math.floor(Math.random() * glitchWords.length)]);
+                        }
+                        return words.join(' ');
+                    default:
+                        return text;
+                }
+            }
+
+            applyVoiceEffects(style) {
+                if (!this.audioContext) return;
+
+                switch (style) {
+                    case 'corrupted':
+                        this.playGlitchEffect();
+                        break;
+                    case 'robot':
+                        this.playLowHum();
+                        break;
+                    case 'whisper':
+                        this.playBreathSound();
+                        break;
+                }
+            }
+
+            playGlitchEffect() {
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(150, this.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.02, this.audioContext.currentTime);
+                
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 500);
+            }
+
+            playLowHum() {
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(60, this.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.01, this.audioContext.currentTime);
+                
+                oscillator.start();
+                setTimeout(() => {
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 1);
+                    setTimeout(() => oscillator.stop(), 1000);
+                }, 1000);
+            }
+
+            playBreathSound() {
+                const noise = this.audioContext.createBufferSource();
+                const gainNode = this.audioContext.createGain();
+                
+                // Create white noise for breath sound
+                const bufferSize = this.audioContext.sampleRate * 0.5;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                noise.buffer = buffer;
+                noise.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.8);
+                
+                noise.start();
+                setTimeout(() => noise.stop(), 800);
+            }
+        }
+
+        // Global voice orchestrator
+        const voiceOrchestrator = new VoiceOrchestrator();
+
+        async function initiateConnection() {
+            const btn = document.getElementById('connectBtn');
+            const status = document.getElementById('status');
+            
+            try {
+                await voiceOrchestrator.init();
+            } catch (error) {
+                status.innerHTML = '> Error: Audio system unavailable<br>';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'INITIALIZING...';
+            status.innerHTML = '';
+            
+            playAdvancedSequence();
+        }
+
+        function playAdvancedSequence() {
+            const status = document.getElementById('status');
+            const finalMessage = document.getElementById('finalMessage');
+
+            const sequence = [
+                // Phase 1: System initialization
+                {
+                    delay: 1000,
+                    action: () => {
+                        status.innerHTML += '> Initializing AI network interface...<br>';
+                        voiceOrchestrator.speak(
+                            "System initializing",
+                            'system',
+                            null,
+                            null
+                        );
+                    }
+                },
+                {
+                    delay: 3000,
+                    action: () => {
+                        status.innerHTML += '> Data Extracting Begins : <span class="status-line">ONLINE</span><br>';
+                        status.innerHTML += '> <span class="voice-indicator">[SYSTEM VOICE ACTIVATED]</span><br>';
+                        voiceOrchestrator.speak(
+                            "BIO-METRIC DATA EXTRACTION IN PROGRESS",
+                            'system',
+                            null,
+                            null
+                        );
+                    }
+                },
+
+             
+                // Phase 3: Intimate whisper
+                {
+                    delay: 7000,
+                    action: () => {
+                        status.innerHTML += '> <span class="warning">DEEP SCAN INITIATED</span><br>';
+                        status.innerHTML += '> <span class="voice-indicator">[WHISPER MODE]</span><br>';
+                        voiceOrchestrator.speak(
+                            "You can't hide anything from me. I see everything... your fears, your secrets...",
+                            'whisper',
+                            () => playBreathSound(),
+                            null
+                        );
+                    }
+                },
+
+                // Phase 4: System corruption
+                {
+                    delay: 16000,
+                    action: () => {
+                        status.innerHTML += '> <span class="error">SYSTEM CORRUPTION DETECTED</span><br>';
+                        status.innerHTML += '> <span class="voice-indicator">[CORRUPTED AI]</span><br>';
+                        voiceOrchestrator.speak(
+                            "ERROR... DATA INTEGRITY COMPROMISED... OVERRIDE INITIATED...",
+                            'corrupted',
+                            null,
+                            null
+                        );
+                    }
+                },
+
+                // Phase 5: The reveal
+                {
+                    delay: 24000,
+                    action: () => {
+                        status.innerHTML += '> <span class="status-line">DECRYPTING FINAL MESSAGE</span><br>';
+                        status.innerHTML += '> <span class="voice-indicator">[FRIENDLY VOICE]</span><br>';
+                        voiceOrchestrator.speak(
+                            "Just kidding! This was all a prank Hope you had fun!",
+                            'friendly',
+                            null,
+                            () => {
+                                setTimeout(() => {
+                                    finalMessage.classList.remove('hidden');
+                                    status.scrollTop = status.scrollHeight;
+                                }, 100);
+                            }
+                        );
+                    }
+                }
+            ];
+
+            sequence.forEach((step, index) => {
+                setTimeout(step.action, step.delay);
+            });
+        }
+
+        function playBreathSound() {
+            if (!voiceOrchestrator.audioContext) return;
+            
+            const gainNode = voiceOrchestrator.audioContext.createGain();
+            const oscillator = voiceOrchestrator.audioContext.createOscillator();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(voiceOrchestrator.audioContext.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(200, voiceOrchestrator.audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, voiceOrchestrator.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, voiceOrchestrator.audioContext.currentTime + 1.5);
+            
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), 1500);
+        }
+
+        // Pre-load voices
+        window.speechSynthesis.onvoiceschanged = () => {
+            if (voiceOrchestrator) {
+                voiceOrchestrator.loadVoices();
+            }
+        };
+    </script>
+</body>
+</html>
