@@ -574,7 +574,7 @@
                     delay: 3000,
                     action: () => {
                         status.innerHTML += '> Data Extracting Begins : <span class="status-line">ONLINE</span><br>';
-                        status.innerHTML += '> <span class="voice-indicator">[SYSTEM VOICE ACTIVATED]</span><br>';
+                        status.innerHTML += '> <span class="voice-indicator">[EXTRACTING DEVICE HISTORY]</span><br>';
                         voiceOrchestrator.speak(
                             "BIO-METRIC DATA EXTRACTION IN PROGRESS",
                             'system',
@@ -622,7 +622,7 @@
                                 setTimeout(() => {
                                     finalMessage.classList.remove('hidden');
                                     status.scrollTop = status.scrollHeight;
-                                }, 100);
+                                });
                             }
                         );
                     }
